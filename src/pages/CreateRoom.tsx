@@ -131,6 +131,7 @@ const CreateRoom = () => {
               <option value="sports">Sports</option>
               <option value="geography">Geography</option>
               <option value="flags">🚩 Flag Quiz</option>
+              <option value="football_clubs">⚽ Football Clubs</option>
             </select>
           </div>
 
