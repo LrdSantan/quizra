@@ -160,11 +160,24 @@ const Game = () => {
       shuffledOptionsRef.current = allOptions;
     }
 
-    setTimeLeft(timeLimits);
+    const storageKey = `quizra_timer_${session?.roomId}_${index}`;
+    const storedStart = sessionStorage.getItem(storageKey);
+    let startTimestamp = Date.now();
+    let initialTimeLeft = timeLimits;
+
+    if (storedStart) {
+      startTimestamp = parseInt(storedStart, 10);
+      const elapsedSec = Math.floor((Date.now() - startTimestamp) / 1000);
+      initialTimeLeft = Math.max(0, timeLimits - elapsedSec);
+    } else {
+      sessionStorage.setItem(storageKey, startTimestamp.toString());
+    }
+
+    setTimeLeft(initialTimeLeft);
     setIsRevealing(false);
     setSelectedAnswer(null);
     setAnswersCount(0);
-    startTimestampRef.current = Date.now();
+    startTimestampRef.current = startTimestamp;
 
   };
 
