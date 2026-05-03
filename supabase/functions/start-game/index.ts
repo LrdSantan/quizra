@@ -35,8 +35,16 @@ serve(async (req) => {
     // 2. Fetch random questions
     let query = supabaseClient.from('questions').select('id')
     
-    if (room.category !== 'mixed') {
-      query = query.eq('category', room.category)
+    const isMixed = Array.isArray(room.category) 
+      ? room.category.includes('mixed') 
+      : room.category === 'mixed';
+
+    if (!isMixed) {
+      if (Array.isArray(room.category)) {
+        query = query.in('category', room.category)
+      } else {
+        query = query.eq('category', room.category)
+      }
     }
     
     const { data: questions, error: questionsError } = await query

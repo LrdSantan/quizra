@@ -20,6 +20,7 @@ const Game = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answersCount, setAnswersCount] = useState(0);
   
+  const playerCountRef = useRef<number>(0);
   const startTimestampRef = useRef<number>(0);
   const roomRef = useRef<any>(null);
   const questionSequenceRef = useRef<any[]>([]);
@@ -44,7 +45,10 @@ const Game = () => {
 
       // Fetch Players
       const { data: playersData } = await supabase.from('players').select('*').eq('room_id', session.roomId);
-      if (playersData) setPlayers(playersData);
+      if (playersData) {
+        setPlayers(playersData);
+        playerCountRef.current = playersData.length;
+      }
 
       // Fetch Room Questions order
       const { data: rqData } = await supabase
@@ -132,10 +136,10 @@ const Game = () => {
   // Effect to handle timer reaching 0 or all players answered
   useEffect(() => {
     if (isRevealing || !currentQuestion || !room) return;
-    if (timeLeft <= 0 || (players.length > 0 && answersCount >= players.length)) {
+    if (timeLeft <= 0 || (playerCountRef.current > 0 && answersCount >= playerCountRef.current)) {
       handleReveal();
     }
-  }, [timeLeft, answersCount, isRevealing, currentQuestion, room, players.length]);
+  }, [timeLeft, answersCount, isRevealing, currentQuestion, room]);
 
 
   const loadQuestion = (sequence: any[], index: number, timeLimits: number) => {
@@ -238,7 +242,7 @@ const Game = () => {
         <div className="flex items-center gap-3 md:gap-6">
           <div className="flex items-center text-slate-300 text-xs md:text-base">
             <Users className="w-3 h-3 md:w-5 md:h-5 mr-1 md:mr-2 text-brand-secondary" />
-            <span className="font-bold whitespace-nowrap">{answersCount}/{players.length}</span>
+            <span className="font-bold whitespace-nowrap">{answersCount}/{playerCountRef.current}</span>
           </div>
           
           <div className="relative flex items-center justify-center w-10 h-10 md:w-16 md:h-16">

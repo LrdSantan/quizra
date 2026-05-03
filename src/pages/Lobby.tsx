@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Users, Play, Loader2, Copy, Check, Zap } from 'lucide-react';
+import { Users, Play, Loader2, Copy, Check, Zap, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { getSession } from '../lib/store';
+import { getSession, clearSession } from '../lib/store';
 
 const Lobby = () => {
   const { roomCode } = useParams();
@@ -89,6 +89,19 @@ const Lobby = () => {
       navigator.clipboard.writeText(roomCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleLeaveRoom = async () => {
+    try {
+      await supabase.from('players').delete().eq('id', session.playerId);
+      if (session.isHost) {
+        await supabase.from('rooms').update({ status: 'cancelled' }).eq('id', session.roomId);
+      }
+      clearSession();
+      navigate('/');
+    } catch (err) {
+      console.error("Failed to leave room:", err);
     }
   };
 
@@ -189,6 +202,15 @@ const Lobby = () => {
             </>
           )}
         </div>
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        <button
+          onClick={handleLeaveRoom}
+          className="flex items-center text-red-400 hover:text-red-300 transition-colors px-6 py-3 rounded-xl border border-red-500/30 hover:bg-red-500/10 font-bold"
+        >
+          <LogOut size={20} className="mr-2" /> Leave Room
+        </button>
       </div>
     </div>
   );

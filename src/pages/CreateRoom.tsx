@@ -10,9 +10,34 @@ const CreateRoom = () => {
   const [error, setError] = useState('');
 
   const [username, setUsername] = useState('');
-  const [category, setCategory] = useState('mixed');
+  const [categories, setCategories] = useState<string[]>(['mixed']);
   const [questionCount, setQuestionCount] = useState(10);
   const [timePerQuestion, setTimePerQuestion] = useState(15);
+
+  const AVAILABLE_CATEGORIES = [
+    { id: 'mixed', label: '🎲 Mixed' },
+    { id: 'general', label: '🧠 General Knowledge' },
+    { id: 'science', label: '🔬 Science' },
+    { id: 'history', label: '📜 History' },
+    { id: 'geography', label: '🌍 Geography' },
+    { id: 'sports', label: '⚽ Sports' },
+    { id: 'flags', label: '🚩 Flags' },
+    { id: 'football_clubs', label: '⚽ Football Clubs' },
+  ];
+
+  const toggleCategory = (cat: string) => {
+    setCategories(prev => {
+      if (cat === 'mixed') return ['mixed'];
+      let newCats = prev.filter(c => c !== 'mixed');
+      if (newCats.includes(cat)) {
+        newCats = newCats.filter(c => c !== cat);
+      } else {
+        newCats.push(cat);
+      }
+      if (newCats.length === 0) return ['mixed'];
+      return newCats;
+    });
+  };
 
   const generateRoomCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -42,7 +67,7 @@ const CreateRoom = () => {
         .insert({
           room_code: roomCode,
           host_name: username,
-          category,
+          category: categories,
           question_count: questionCount,
           time_per_question: timePerQuestion,
           status: 'waiting',
@@ -118,21 +143,26 @@ const CreateRoom = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-colors appearance-none"
-            >
-              <option value="mixed">Mixed Categories</option>
-              <option value="general">General Knowledge</option>
-              <option value="science">Science & Nature</option>
-              <option value="history">History</option>
-              <option value="sports">Sports</option>
-              <option value="geography">Geography</option>
-              <option value="flags">🚩 Flag Quiz</option>
-              <option value="football_clubs">⚽ Football Clubs</option>
-            </select>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Categories</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {AVAILABLE_CATEGORIES.map(cat => {
+                const isSelected = categories.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCategory(cat.id)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                      isSelected 
+                        ? 'border-brand-accent bg-brand-accent/20 text-white' 
+                        : 'border-slate-600 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
