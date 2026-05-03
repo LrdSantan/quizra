@@ -121,7 +121,7 @@ const Game = () => {
 
   // Countdown Timer Effect
   useEffect(() => {
-    if (isRevealing || !currentQuestion || !room) return;
+    if (!currentQuestion || !room) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -131,7 +131,7 @@ const Game = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRevealing, currentQuestion, room]);
+  }, [currentQuestion, room]);
 
   // Effect to handle timer reaching 0
   useEffect(() => {
@@ -209,9 +209,30 @@ const Game = () => {
       });
 
       // Show feedback for a moment.
-      // We don't advance the room here. The host's useEffect will trigger handleReveal 
-      // when all players have answered or the timer runs out.
       setIsRevealing(true);
+
+      // Advance immediately after 1.5 seconds without waiting for timer
+      setTimeout(async () => {
+        const currentRoom = roomRef.current;
+        if (!currentRoom) return;
+
+        const nextIndex = currentRoom.current_question_index + 1;
+        
+        if (nextIndex >= currentRoom.question_count) {
+          navigate(`/room/${roomCode}/results`);
+          if (session?.isHost) {
+            await supabase.from('rooms').update({ status: 'finished' }).eq('id', session.roomId);
+          }
+        } else {
+          // Advance locally immediately
+          loadQuestion(questionSequenceRef.current, nextIndex, currentRoom.time_per_question);
+          
+          // Host pushes the update to the DB to sync latecomers/non-answering players
+          if (session?.isHost) {
+            await supabase.from('rooms').update({ current_question_index: nextIndex }).eq('id', session.roomId);
+          }
+        }
+      }, 1500);
 
     } catch (error) {
       console.error("Failed to submit answer:", error);
@@ -277,7 +298,7 @@ const Game = () => {
           
           <div className="bg-slate-800 p-4 md:p-8 rounded-2xl md:rounded-3xl border border-slate-700 shadow-xl relative overflow-hidden min-h-[80px] md:min-h-[200px] flex flex-col items-center justify-center text-center">
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-accent to-brand-secondary"></div>
-             {currentQuestion.image_url && (room.category === 'flags' || room.category === 'football_clubs') && (
+             {currentQuestion.image_url && (Array.isArray(room.category) ? (room.category.includes('flags') || room.category.includes('football_clubs')) : (room.category === 'flags' || room.category === 'football_clubs')) && (
                <img 
                  src={currentQuestion.image_url} 
                  alt="Question" 
