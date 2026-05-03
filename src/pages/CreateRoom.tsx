@@ -22,7 +22,7 @@ const CreateRoom = () => {
     { id: 'geography', label: '🌍 Geography' },
     { id: 'sports', label: '⚽ Sports' },
     { id: 'flags', label: '🚩 Flags' },
-    { id: 'football_clubs', label: '⚽ Football Clubs' },
+    { id: 'football_clubs', label: '🏆 Football Clubs' },
   ];
 
   const toggleCategory = (cat: string) => {
