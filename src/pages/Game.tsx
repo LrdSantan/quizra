@@ -133,13 +133,13 @@ const Game = () => {
     return () => clearInterval(timer);
   }, [isRevealing, currentQuestion, room]);
 
-  // Effect to handle timer reaching 0 or all players answered
+  // Effect to handle timer reaching 0
   useEffect(() => {
     if (isRevealing || !currentQuestion || !room) return;
-    if (timeLeft <= 0 || (playerCountRef.current > 0 && answersCount >= playerCountRef.current)) {
+    if (timeLeft <= 0) {
       handleReveal();
     }
-  }, [timeLeft, answersCount, isRevealing, currentQuestion, room]);
+  }, [timeLeft, isRevealing, currentQuestion, room]);
 
 
   const loadQuestion = (sequence: any[], index: number, timeLimits: number) => {
