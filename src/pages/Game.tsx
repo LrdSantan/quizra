@@ -20,7 +20,6 @@ const Game = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answersCount, setAnswersCount] = useState(0);
   
-  const timerRef = useRef<any>(null);
   const startTimestampRef = useRef<number>(0);
   const roomRef = useRef<any>(null);
   const questionSequenceRef = useRef<any[]>([]);
@@ -112,10 +111,23 @@ const Game = () => {
       supabase.removeChannel(roomSub);
       supabase.removeChannel(answersSub);
       supabase.removeChannel(playersSub);
-      clearInterval(timerRef.current);
     };
   }, [roomCode]);
 
+
+  // Countdown Timer Effect
+  useEffect(() => {
+    if (isRevealing || !currentQuestion || !room) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isRevealing, currentQuestion, room]);
 
   // Effect to handle timer reaching 0 or all players answered
   useEffect(() => {
@@ -123,7 +135,7 @@ const Game = () => {
     if (timeLeft <= 0 || (players.length > 0 && answersCount >= players.length)) {
       handleReveal();
     }
-  }, [timeLeft, answersCount]);
+  }, [timeLeft, answersCount, isRevealing, currentQuestion, room, players.length]);
 
 
   const loadQuestion = (sequence: any[], index: number, timeLimits: number) => {
@@ -150,21 +162,10 @@ const Game = () => {
     setAnswersCount(0);
     startTimestampRef.current = Date.now();
 
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const handleReveal = () => {
     setIsRevealing(true);
-    clearInterval(timerRef.current);
 
     // Host advances after a delay if no one answered or timer ran out
     if (session?.isHost) {
@@ -203,22 +204,10 @@ const Game = () => {
         }
       });
 
-      // Show feedback for a moment
+      // Show feedback for a moment.
+      // We don't advance the room here. The host's useEffect will trigger handleReveal 
+      // when all players have answered or the timer runs out.
       setIsRevealing(true);
-      clearInterval(timerRef.current);
-
-      // Wait 1.5 seconds then advance the room
-      setTimeout(async () => {
-        const currentRoom = roomRef.current;
-        if (!currentRoom) return;
-
-        const nextIndex = currentRoom.current_question_index + 1;
-        if (nextIndex >= currentRoom.question_count) {
-          await supabase.from('rooms').update({ status: 'finished' }).eq('id', session.roomId);
-        } else {
-          await supabase.from('rooms').update({ current_question_index: nextIndex }).eq('id', session.roomId);
-        }
-      }, 1500);
 
     } catch (error) {
       console.error("Failed to submit answer:", error);
@@ -284,10 +273,10 @@ const Game = () => {
           
           <div className="bg-slate-800 p-4 md:p-8 rounded-2xl md:rounded-3xl border border-slate-700 shadow-xl relative overflow-hidden min-h-[80px] md:min-h-[200px] flex flex-col items-center justify-center text-center">
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-accent to-brand-secondary"></div>
-             {currentQuestion.image_url && (
+             {currentQuestion.image_url && (room.category === 'flags' || room.category === 'football_clubs') && (
                <img 
                  src={currentQuestion.image_url} 
-                 alt="Flag" 
+                 alt="Question" 
                  className="w-32 h-auto mx-auto mb-4 rounded shadow-md"
                />
              )}
