@@ -93,6 +93,7 @@ const Lobby = () => {
   };
 
   const handleLeaveRoom = async () => {
+    if (!session) return;
     try {
       await supabase.from('players').delete().eq('id', session.playerId);
       if (session.isHost) {
